@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="A2 Prüfung">
+    <title>A2 / STS Prüfungssimulation (Vollversion)</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 850px; margin: 20px auto; padding: 20px; background-color: #f8fafc; color: #1e293b; line-height: 1.5; -webkit-text-size-adjust: 100%; touch-action: manipulation; }
+        h1 { border-bottom: 3px solid #1e3a8a; padding-bottom: 10px; color: #0f172a; margin-top: 0; }
+        .info-text { font-size: 14px; color: #475569; margin-bottom: 20px; background: #e2e8f0; padding: 12px 15px; border-radius: 6px; }
+        .ios-notice { font-size: 14px; color: #92400e; background: #fef3c7; border: 1px solid #f59e0b; border-left: 5px solid #f59e0b; padding: 12px 15px; border-radius: 6px; margin-bottom: 20px; }
+        .question-card { background: #ffffff; padding: 20px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-left: 5px solid #3b82f6; transition: border-color 0.3s; }
+        .question-title { font-weight: bold; margin-bottom: 15px; font-size: 16px; color: #0f172a; }
+        .options-group { display: flex; flex-direction: column; gap: 8px; }
+        .option-label { display: flex; align-items: baseline; padding: 12px; background: #f1f5f9; border-radius: 6px; cursor: pointer; transition: background 0.2s; margin: 0; touch-action: manipulation; -webkit-tap-highlight-color: rgba(30, 58, 138, 0.15); }
+        .option-label:hover, .option-label:active { background: #e2e8f0; }
+        .option-label input { margin-right: 12px; transform: translateY(2px); cursor: pointer; width: 18px; height: 18px; flex-shrink: 0; accent-color: #1e3a8a; }
+        button { background-color: #1e3a8a; color: white; border: none; padding: 14px 28px; font-size: 16px; font-weight: bold; border-radius: 6px; cursor: pointer; margin-top: 15px; transition: background 0.3s; width: 100%; box-shadow: 0 4px 6px rgba(30, 58, 138, 0.2); -webkit-appearance: none; appearance: none; touch-action: manipulation; }
+        button:hover, button:active { background-color: #172554; }
+        #reload-btn { background-color: #059669; box-shadow: 0 4px 6px rgba(5, 150, 105, 0.2); }
+        #reload-btn:hover, #reload-btn:active { background-color: #047857; }
+        #result-container { margin-top: 30px; padding: 25px; background: #ffffff; border-radius: 8px; display: none; font-size: 18px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 2px solid #e2e8f0; }
+        .score-circle { display: inline-block; width: 100px; height: 100px; line-height: 100px; border-radius: 50%; font-size: 28px; font-weight: bold; color: white; margin-bottom: 15px; }
+        .feedback { font-weight: bold; margin-top: 15px; padding: 12px; border-radius: 6px; display: none; font-size: 14px; }
+        .feedback-correct { background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+        .feedback-incorrect { background-color: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+        .stats-bar { display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 20px; font-size: 14px; color: #1e3a8a; }
+        @media (max-width: 600px) {
+            body { margin: 0 auto; padding: 14px; }
+            h1 { font-size: 22px; }
+            .question-card { padding: 16px; }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>UAS Theorieprüfung Simulation (A2)</h1>
+    <div class="info-text">
+        <strong>Modus:</strong> 50 zufällige Fragen aus dem Gesamtpool.<br>
+        Zum Bestehen der echten A2-Prüfung beim LBA müssen in der Regel 75% der Fragen richtig beantwortet werden. Die Auswertung erfolgt am Ende per Knopfdruck.
+    </div>
+
+    <div class="ios-notice" id="ios-preview-notice">
+        <strong>Hinweis für iPhone-Nutzer (E-Mail-Vorschau):</strong><br>
+        Du siehst gerade die eingeschränkte Vorschau der Mail-App. Damit die <strong>Zufallsmischung</strong> und die <strong>Auswertung</strong> funktionieren, tippe bitte auf das <strong>Teilen-Symbol</strong> (Viereck mit Pfeil nach oben) und wähle <strong>„In Safari öffnen“</strong> (oder „In Chrome öffnen“).
+    </div>
+
+    <div class="stats-bar" id="stats-bar">
+        <span>Fragen: 50</span>
+        <span>Kategorie: A2 / STS Auffrischung</span>
+    </div>
+
+    <div id="quiz-container">
+        <div class="question-card" id="qcard-0"><div class="question-title">Frage 1: Wie wird die Windrichtung in Wetterberichten typischerweise angegeben?</div><div class="options-group"><label class="option-label"><input type="radio" name="question-0" value="0"><span>Die Richtung, in die der Wind weht.</span></label><label class="option-label"><input type="radio" name="question-0" value="1"><span>Die Himmelsrichtung, aus der der Wind kommt.</span></label><label class="option-label"><input type="radio" name="question-0" value="2"><span>In Prozent der relativen Luftfeuchtigkeit.</span></label><label class="option-label"><input type="radio" name="question-0" value="3"><span>Ausschließlich als Vektor in Millibar.</span></label></div><div id="feedback-0" class="feedback"></div></div>
+        <div class="question-card" id="qcard-1"><div class="question-title">Frage 2: Wie lautet die Faustregel zur Umrechnung von Windgeschwindigkeit in Knoten zu km/h?</div><div class="options-group"><label class="option-label"><input type="radio" name="question-1" value="0"><span>Knoten geteilt durch 2</span></label><label class="option-label"><input type="radio" name="question-1" value="1"><span>Knoten mal 3,6</span></label><label class="option-label"><input type="radio" name="question-1" value="2"><span>Knoten plus 10</span></label><label class="option-label"><input type="radio" name="question-1" value="3"><span>Knoten mal 2</span></label></div><div id="feedback-1" class="feedback"></div></div>
+        <div class="question-card" id="qcard-2"><div class="question-title">Frage 3: Welchen Einfluss hat die Bodenreibung (Oberflächenreibung) auf den Wind?</div><div class="options-group"><label class="option-label"><input type="radio" name="question-2" value="0"><span>Sie beschleunigt den Wind in Bodennähe.</span></label><label class="option-label"><input type="radio" name="question-2" value="1"><span>Sie hat keinen Einfluss auf die Windgeschwindigkeit.</span></label><label class="option-label"><input type="radio" name="question-2" value="2"><span>Sie bremst den Wind in Bodennähe ab.</span></label><label class="option-label"><input type="radio" name="question-2" value="3"><span>Sie kühlt den Wind massiv herunter.</span></label></div><div id="feedback-2" class="feedback"></div></div>
+        <div class="question-card" id="qcard-3"><div class="question-title">Frage 4: Was passiert mit der Windgeschwindigkeit typischerweise, wenn ein UAS in größere Höhen (z.B. 100m) aufsteigt?</div><div class="options-group"><label class="option-label"><input type="radio" name="question-3" value="0"><span>Sie nimmt ab, da die Luftdichte sinkt.</span></label><label class="option-label"><input type="radio" name="question-3" value="1"><span>Sie nimmt zu, da die bremsende Bodenreibung entfällt.</span></label><label class="option-label"><input type="radio" name="question-3" value="2"><span>Sie bleibt stets konstant zur Bodengeschwindigkeit.</span></label><label class="option-label"><input type="radio" name="question-3" value="3"><span>Sie ändert zyklisch alle 10 Sekunden ihre Richtung.</span></label></div><div id="feedback-3" class="feedback"></div></div>
+        <div class="question-card" id="qcard-4"><div class="question-title">Frage 5: An welchen typischen Wetterphänomenen lassen sich extreme Turbulenzzonen erkennen?</div><div class="options-group"><label class="option-label"><input type="radio" name="question-4" value="0"><span>An wolkenlosem Himmel (CAVOK).</span></label><label class="option-label"><input type="radio" name="question-4" value="1"><span>Unter und in der Nähe von Cumulonimbuswolken (Gewitterwolken).</span></label><label class="option-label"><input type="radio" name="question-4" value="2"><span>Bei leichtem Strahlungsnebel.</span></label><label class="option-label"><input type="radio" name="question-4" value="3"><span>Ausschließlich bei Temperaturen unter 0°C.</span></label></div><div id="feedback-4" class="feedback"></div></div>
+        <div class="question-card" id="qcard-5"><div class="question-title">Frage 6: Wie verhält sich die Temperatur in der Troposphäre mit zunehmender Höhe?</div><div class="options-group"><label class="option-label"><input type="radio" name="question-5" value="0"><span>Sie steigt um ca. 1°C pro 100m.</span></label><label class="option-label"><input type="radio" name="question-5" value="1"><span>Sie bleibt konstant.</span></label><label class="option-label"><input type="radio" name="question-5" value="2"><span>Sie sinkt durchschnittlich um ca. 0,6°C pro 100m.</span></label><label class="option-label"><input type="radio" name="question-5" value="3"><span>Sie sinkt schlagartig auf -50°C ab 50m Höhe.</span></label></div><div id="feedback-5" class="feedback"></div></div>
+        <div class="question-card" id="qcard-6"><div class="question-title">Frage 7: Welche direkte Gefahr droht dem UAS bei Flügen mit Temperaturen um den Gefrierpunkt und hoher Luftfeuchtigkeit?</div><div class="options-group"><label class="option-label"><input type="radio" name="question-6" value="0"><span>Die Propeller drehen zu schnell durch, da die Luft zu dicht ist.</span></label><label class="option-label"><input type="radio" name="question-6" value="1"><span>Vereisung (Eisansatz) an den Propellern, was zu drastischem Leistungsverlust führt.</span></label><label class="option-label"><input type="radio" name="question-6" value="2"><span>Der Kunststoff des Gehäuses schmilzt durch Reibung.</span></label><label class="option-label"><input type="radio" name="question-6" value="3"><span>Die Kameraobjektive zerspringen.</span></label></div><div id="feedback-6" class="feedback"></div></div>
+        <div class="question-card" id="qcard-7"><div class="question-title">Frage 8: Welche Voraussetzung muss für die Entstehung von Nebel gegeben sein?</div><div class="options-group"><label class="option-label"><input type="radio" name="question-7" value="0"><span>Die Windgeschwindigkeit muss über 30 Knoten liegen.</span></label><label class="option-label"><input type="radio" name="question-7" value="1"><span>Die Lufttemperatur muss exakt auf den Taupunkt absinken (Spread nahe 0).</span></label><label class="option-label"><input type="radio" name="question-7" value="2"><span>Der Luftdruck muss über 1050 hPa steigen.</span></label><label class="option-label"><input type="radio" name="question-7" value="3"><span>Es muss zwingend zuvor geregnet haben.</span></label></div><div id="feedback-7" class="feedback"></div></div>
+        <div class="question-card" id="qcard-8"><div class="question-title">Frage 9: Wie unterscheidet sich Nebel von Dunst in der Luftfahrtdefinition?</div><div class="options-group"><label class="option-label"><input type="radio" name="question-8" value="0"><span>Bei Nebel liegt die Sichtweite unter 1 km, bei Dunst zwischen 1 km und 8 km.</span></label><label class="option-label"><input type="radio" name="question-8" value="1"><span>Nebel ist warm, Dunst ist kalt.</span></label><label class="option-label"><input type="radio" name="question-8" value="2"><span>Nebel entsteht nur über Wasser, Dunst nur über Land.</span></label><label class="option-label"><input type="radio" name="question-8" value="3"><span>Bei Dunst liegt die Sichtweite unter 1 km, bei Nebel darüber.</span></label></div><div id="feedback-8" class="feedback"></div></div>
+        <div class="question-card" id="qcard-9"><div class="question-title">Frage 10: Was passiert mit der Luftdichte, wenn die Lufttemperatur stark ansteigt?</div><div class="options-group"><label class="option-label"><input type="radio" name="question-9" value="0"><span>Die Luftdichte nimmt zu.</span></label><label class="option-label"><input type="radio" name="question-9" value="1"><span>Die Luftdichte nimmt ab, was den Auftrieb der Propeller verringert.</span></label><label class="option-label"><input type="radio" name="question-9" value="2"><span>Die Luftdichte bleibt unverändert, nur der Druck steigt.</span></label><label class="option-label"><input type="radio" name="question-9" value="3"><span>Die Luftdichte schwankt im Sekundentakt.</span></label></div><div id="feedback-9" class="feedback"></div></div>
+        <div class="question-card" id="qcard-10"><div class="question-title">Frage 11: Wofür steht die Abkürzung UTC in Wetter- und Luftfahrtberichten?</div><div class="options-group"><label class="option-label"><input type="radio" name="question-10" value="0"><span>Universal Time Coordinated (Koordinierte Weltzeit).</span></label><label class="option-label"><input type="radio" name="question-10" value="1"><span>United Time Clock.</span></label><label class="option-label"><input type="radio" name="question-10" value="2"><span>Universal Temperature Control.</span></label><label class="option-label"><input type="radio" name="question-10" value="3"><span>Unmanned Traffic Control.</span></label></div><div id="feedback-10" class="feedback"></div></div>
+        <div class="question-card" id="qcard-11"><div class="question-title">Frage 12: Was versteht man unter dem &#x27;sicheren Betriebsbereich&#x27; (Operating Envelope) eines UAS?</div><div class="options-group"><label class="option-label"><input type="radio" name="question-11" value="0"><span>Der Bereich bis exakt 120m Höhe.</span></label><label class="option-label"><input type="radio" name="question-11" value="1"><span>Die vom Hersteller festgelegten physischen und umweltbedingten Limits (Wind, Temp., Gewicht).</span></label><label class="option-label"><input type="radio" name="question-11" value="2"><span>Die maximale Reichweite der Fernsteuerung.</span></label><label class="option-label"><input type="radio" name="question-11" value="3"><span>Das von der Behörde ausgewiesene Fluggebiet.</span></label></div><div id="feedback-11" class="feedback"></div></div>
+        <div class="question-card" id="qcard-12"><div class="question-title">Frage 13: Was bedeutet die Abkürzung MTOM?</div><div class="options-group"><label class="option-label"><input type="radio" name="question-12" value="0"><span>Maximum Time of Maintenance.</span></label><label class="option-label"><input type="radio" name="question-12" value="1"><span>Minimum Take-Off Mass.</span></label><label class="option-label"><input type="radio" name="question-12" value="2"><span>Maximum Take-Off Mass (Maximal zulässige Abflugmasse).</span></label><label class="option-label"><input type="radio" name="question-12" value="3"><span>Manual Thrust Override Mode.</span></label></div><div id="feedback-12" class="feedback"></div></div>
+        <div class="question-card" id="qcard-13"><div class="question-title">Frage 14: Wofür steht die Abkürzung CG in der Flugmechanik?</div><div class="options-group"><label class="option-label"><input type="radio" name="question-13" value="0"><span>Control Gain (Steuerungsverstärkung).</span></label><label class="option-label"><input type="radio" name="question-13" value="1"><span>Center of Gravity (Schwerpunkt).</span></label><label class="option-label"><input type="radio" name="question-13" value="2"><span>Current Generation.</span></label><label class="option-label"><input type="radio" name="question-13" value="3"><span>Collision Guard.</span></label></div><div id="feedback-13" class="feedback"></div></div>
+        <div class="question-card" id="qcard-14"><div class="question-title">Frage 15: Welche Auswirkungen hat ein falsch liegender Schwerpunkt (z.B. durch schlecht montierte Nutzlast) bei einem Multikopter?</div><div class="options-group"><label class="option-label"><input type="radio" name="question-14" value="0"><span>Er fliegt schneller, da er aerodynamischer ist.</span></label><label class="option-label"><input type="radio" name="question-14" value="1"><span>Die Flugzeit verdoppelt sich.</span></label><label class="option-label"><input type="radio" name="question-14" value="2"><span>Asymmetrische Motorbelastung, schlechte Steuerbarkeit und erhöhter Stromverbrauch.</span></label><label class="option-label"><input type="radio" name="question-14" value="3"><span>Die Funkverbindung bricht sofort ab.</span></label></div><div id="feedback-14" class="feedback"></div></div>
+        <div class="question-card" id="qcard-15"><div class="question-title">Frage 16: Welche Konsequenz droht bei einem hecklastigen Starrflügler (CG hinter dem hinteren Limit)?</div><div class="options-group"><label class="option-label"><input type="radio" name="question-15" value="0"><span>Das Flugzeug wird extrem stabil und lässt sich kaum lenken.</span></label><label class="option-label"><input type="radio" name="question-15" value="1"><span>Das Flugzeug wird aerodynamisch hochgradig instabil (Stall-Gefahr) und ist unkontrollierbar.</span></label><label class="option-label"><input type="radio" name="question-15" value="2"><span>Das Flugzeug fliegt automatisch Loopings.</span></label><label class="option-label"><input type="radio" name="question-15" value="3"><span>Es gibt keine spürbaren Konsequenzen.</span></label></div><div id="feedback-15" class="feedback"></div></div>
+        <div class="question-card" id="qcard-16"><div class="question-title">Frage 17: Warum muss eine Nutzlast (z.B. Kamera) vor dem Start absolut sicher arretiert werden?</div><div class="options-group"><label class="option-label"><input type="radio" name="question-16" value="0"><span>Damit sie nicht gestohlen wird.</span></label><label class="option-label"><input type="radio" name="question-16" value="1"><span>Weil ein Verrutschen während des Fluges den Schwerpunkt abrupt verschiebt und zum Absturz führen kann.</span></label><label class="option-label"><input type="radio" name="question-16" value="2"><span>Weil ansonsten die CE-Markierung ungültig wird.</span></label><label class="option-label"><input type="radio" name="question-16" value="3"><span>Damit das Video nicht verwackelt (rein optischer Grund).</span></label></div><div id="feedback-16" class="feedback"></div></div>
+        <div class="question-card" id="qcard-17"><div class="question-title">Frage 18: Was gibt die C-Rate eines Li-Po Akkus an?</div><div class="options-group"><label class="option-label"><input type="radio" name="question-17" value="0"><span>Die Ladezyklen, bis der Akku defekt ist.</span></label><label class="option-label"><input type="radio" name="question-17" value="1"><span>Die maximale Kapazität in Milliamperestunden.</span></label><label class="option-label"><input type="radio" name="question-17" value="2"><span>Die zulässige Betriebstemperatur in Celsius.</span></label><label class="option-label"><input type="radio" name="question-17" value="3"><span>Den maximal zulässigen Entladestrom im Verhältnis zur Kapazität.</span></label></div><div id="feedback-17" class="feedback"></div></div>
+        <div class="question-card" id="qcard-18"><div class="question-title">Frage 19: Was versteht man unter &#x27;Thermal Runaway&#x27; bei Lithium-Akkus?</div><div class="options-group"><label class="option-label"><input type="radio" name="question-18" value="0"><span>Das Erwärmen des Akkus im Winter, um die Leistung zu steigern.</span></label><label class="option-label"><input type="radio" name="question-18" value="1"><span>Eine unkontrollierbare, sich selbst verstärkende Überhitzung, die zum Brand/Explosion führt.</span></label><label class="option-label"><input type="radio" name="question-18" value="2"><span>Die automatische Abschaltung des Akkus bei 0% Ladung.</span></label><label class="option-label"><input type="radio" name="question-18" value="3"><span>Das Fliehen vor Hitzequellen durch Sensorik.</span></label></div><div id="feedback-18" class="feedback"></div></div>
+        <div class="question-card" id="qcard-19"><div class="question-title">Frage 20: Wie sollten Li-Po Akkus optimal gelagert werden?</div><div class="options-group"><label class="option-label"><input type="radio" name="question-19" value="0"><span>Komplett entladen (0%) im Kühlschrank.</span></label><label class="option-label"><input type="radio" name="question-19" value="1"><span>Immer auf 100% vollgeladen auf der Heizung.</span></label><label class="option-label"><input type="radio" name="question-19" value="2"><span>Auf Lagerspannung (ca. 3.8-3.9V pro Zelle) in einer feuerfesten Umgebung.</span></label><label class="option-label"><input type="radio" name="question-19" value="3"><span>Im direkten Sonnenlicht, um den Innenwiderstand zu senken.</span></label></div><div id="feedback-19" class="feedback"></div></div>
+        <div class="question-card" id="qcard-20"><div class="question-title">Frage 21: Welcher horizontale Mindestabstand gilt beim Betrieb eines C2-UAS im Normalmodus in der Kategorie A2 zu unbeteiligten Personen?</div><div class="options-group"><label class="option-label"><input type="radio" name="question-20" value="0"><span>10 Meter.</span></label><label class="option-label"><input type="radio" name="question-20" value="1"><span>30 Meter.</span></label><label class="option-label"><input type="radio" name="question-20" value="2"><span>5 Meter.</span></label><label class="option-label"><input type="radio" name="question-20" value="3"><span>50 Meter.</span></label></div><div id="feedback-20" class="feedback"></div></div>
+        <div class="question-card" id="qcard-21"><div class="question-title">Frage 22: Auf welchen Wert wird die Geschwindigkeit im &#x27;Low-Speed-Mode&#x27; (Langsamflugmodus) bei C2-Drohnen typischerweise begrenzt?</div><div class="options-group"><label class="option-label"><input type="radio" name="question-21" value="0"><span>Maximal 10 m/s.</span></label><label class="option-label"><input type="radio" name="question-21" value="1"><span>Maximal 1 m/s.</span></label><label class="option-label"><input type="radio" name="question-21" value="2"><span>Maximal 5 m/s.</span></label><label class="option-label"><input type="radio" name="question-21" value="3"><span>Maximal 3 m/s.</span></label></div><div id="feedback-21" class="feedback"></div></div>
+        <div class="question-card" id="qcard-22"><div class="question-title">Frage 23: Auf welche Distanz darf der horizontale Abstand zu Unbeteiligten reduziert werden, wenn der Langsamflugmodus (Low-Speed-Mode) bei einem C2-UAS aktiviert ist?</div><div class="options-group"><label class="option-label"><input type="radio" name="question-22" value="0"><span>Auf bis zu 1 Meter.</span></label><label class="option-label"><input type="radio" name="question-22" value="1"><span>Auf bis zu 15 Meter.</span></label><label class="option-label"><input type="radio" name="question-22" value="2"><span>Auf bis zu 5 Meter.</span></label><label class="option-label"><input type="radio" name="question-22" value="3"><span>Auf 0 Meter (Überflug erlaubt).</span></label></div><div id="feedback-22" class="feedback"></div></div>
+        <div class="question-card" id="qcard-23"><div class="question-title">Frage 24: Wie funktioniert die &#x27;1:1 Regel&#x27; zur Minderung des Bodenrisikos mathematisch?</div><div class="options-group"><label class="option-label"><input type="radio" name="question-23" value="0"><span>Die horizontale Distanz zu Personen muss stets das Doppelte der Flughöhe betragen.</span></label><label class="option-label"><input type="radio" name="question-23" value="1"><span>Die horizontale Distanz zu Personen muss mindestens der aktuellen Flughöhe entsprechen (z.B. 40m Höhe = 40m Abstand).</span></label><label class="option-label"><input type="radio" name="question-23" value="2"><span>Für jeden geflogenen Kilometer muss 1 Minute Pause eingelegt werden.</span></label><label class="option-label"><input type="radio" name="question-23" value="3"><span>Pro Kilo Gewicht muss 1 Meter Abstand gehalten werden.</span></label></div><div id="feedback-23" class="feedback"></div></div>
+        <div class="question-card" id="qcard-24"><div class="question-title">Frage 25: Wer trägt letztlich die rechtliche Verantwortung für die Bestimmung und Aufrechterhaltung des sicheren Abstands zu Menschen?</div><div class="options-group"><label class="option-label"><input type="radio" name="question-24" value="0"><span>Der Hersteller des UAS.</span></label><label class="option-label"><input type="radio" name="question-24" value="1"><span>Die Luftfahrtbehörde.</span></label><label class="option-label"><input type="radio" name="question-24" value="2"><span>Ausschließlich der Fernpilot vor Ort.</span></label><label class="option-label"><input type="radio" name="question-24" value="3"><span>Die automatische Hinderniserkennung der Drohne.</span></label></div><div id="feedback-24" class="feedback"></div></div>
+        <div class="question-card" id="qcard-25"><div class="question-title">Frage 26: Welche beiden EU-Verordnungen bilden die rechtliche Grundlage für den UAS-Betrieb in Europa?</div><div class="options-group"><label class="option-label"><input type="radio" name="question-25" value="0"><span>(EU) 2015/100 und (EU) 2016/200.</span></label><label class="option-label"><input type="radio" name="question-25" value="1"><span>(EU) 2019/947 und (EU) 2019/945.</span></label><label class="option-label"><input type="radio" name="question-25" value="2"><span>(EU) 2021/111 und (EU) 2021/222.</span></label><label class="option-label"><input type="radio" name="question-25" value="3"><span>LuftVG und LuftVO.</span></label></div><div id="feedback-25" class="feedback"></div></div>
+        <div class="question-card" id="qcard-26"><div class="question-title">Frage 27: Welche sind die drei Unterkategorien der Betriebskategorie &#x27;Offen&#x27; (Open)?</div><div class="options-group"><label class="option-label"><input type="radio" name="question-26" value="0"><span>A1, A2, A3.</span></label><label class="option-label"><input type="radio" name="question-26" value="1"><span>Open, Specific, Certified.</span></label><label class="option-label"><input type="radio" name="question-26" value="2"><span>C0, C1, C2.</span></label><label class="option-label"><input type="radio" name="question-26" value="3"><span>VFR, IFR, SVFR.</span></label></div><div id="feedback-26" class="feedback"></div></div>
+        <div class="question-card" id="qcard-27"><div class="question-title">Frage 28: Welche UAS-Klassenmarkierung ist standardmäßig für den Betrieb in der Unterkategorie A2 vorgesehen?</div><div class="options-group"><label class="option-label"><input type="radio" name="question-27" value="0"><span>C0</span></label><label class="option-label"><input type="radio" name="question-27" value="1"><span>C1</span></label><label class="option-label"><input type="radio" name="question-27" value="2"><span>C3</span></label><label class="option-label"><input type="radio" name="question-27" value="3"><span>C2</span></label></div><div id="feedback-27" class="feedback"></div></div>
+        <div class="question-card" id="qcard-28"><div class="question-title">Frage 29: Wie unterscheidet sich ein Unfall (Accident) von einem Vorfall (Incident)?</div><div class="options-group"><label class="option-label"><input type="radio" name="question-28" value="0"><span>Es gibt keinen Unterschied, die Begriffe sind synonym.</span></label><label class="option-label"><input type="radio" name="question-28" value="1"><span>Ein Vorfall hat fatale Folgen, ein Unfall nicht.</span></label><label class="option-label"><input type="radio" name="question-28" value="2"><span>Ein Unfall beinhaltet schwere Personen- oder Sachschäden; ein Vorfall beschreibt Störungen ohne katastrophale Folgen.</span></label><label class="option-label"><input type="radio" name="question-28" value="3"><span>Ein Unfall passiert nur bemannten Flugzeugen.</span></label></div><div id="feedback-28" class="feedback"></div></div>
+        <div class="question-card" id="qcard-29"><div class="question-title">Frage 30: Was bedeutet der Begriff &#x27;Just Culture&#x27; im Rahmen von Vorfallsmeldungen (Occurrence Reporting)?</div><div class="options-group"><label class="option-label"><input type="radio" name="question-29" value="0"><span>Es wird nur gemeldet, wenn es absolut gerechtfertigt ist.</span></label><label class="option-label"><input type="radio" name="question-29" value="1"><span>Eine Fehlerkultur, bei der unabsichtliche Fehler nicht bestraft werden, um das offene Melden von Sicherheitsproblemen zu fördern.</span></label><label class="option-label"><input type="radio" name="question-29" value="2"><span>Wer einen Fehler macht, wird sofort und maximal juristisch bestraft.</span></label><label class="option-label"><input type="radio" name="question-29" value="3"><span>Es werden nur Fehler der Hersteller gemeldet.</span></label></div><div id="feedback-29" class="feedback"></div></div>
+        <div class="question-card" id="qcard-30"><div class="question-title">Frage 31: Was ist eine geografische UAS-Zone (Geozone)?</div><div class="options-group"><label class="option-label"><input type="radio" name="question-30" value="0"><span>Eine Zone ohne Schwerkraft.</span></label><label class="option-label"><input type="radio" name="question-30" value="1"><span>Ein vom jeweiligen Staat festgelegtes Gebiet, in dem UAS-Betrieb verboten oder an bestimmte Auflagen geknüpft ist.</span></label><label class="option-label"><input type="radio" name="question-30" value="2"><span>Ein Gebiet, in dem nur mit Kameras geflogen werden darf.</span></label><label class="option-label"><input type="radio" name="question-30" value="3"><span>Der Bereich direkt über dem Wohnort des Fernpiloten.</span></label></div><div id="feedback-30" class="feedback"></div></div>
+        <div class="question-card" id="qcard-31"><div class="question-title">Frage 32: Über welches offizielle digitale Portal können Fernpiloten in Deutschland aktuelle Geozonen und Luftraumbeschränkungen einsehen?</div><div class="options-group"><label class="option-label"><input type="radio" name="question-31" value="0"><span>Google Maps.</span></label><label class="option-label"><input type="radio" name="question-31" value="1"><span>dipul.de (Digitales Portal rund um Drohnen).</span></label><label class="option-label"><input type="radio" name="question-31" value="2"><span>drohnen-radar.com.</span></label><label class="option-label"><input type="radio" name="question-31" value="3"><span>Wetter.com.</span></label></div><div id="feedback-31" class="feedback"></div></div>
+        <div class="question-card" id="qcard-32"><div class="question-title">Frage 33: Wodurch unterscheidet sich &#x27;Geo-Awareness&#x27; von &#x27;Geo-Caging&#x27;?</div><div class="options-group"><label class="option-label"><input type="radio" name="question-32" value="0"><span>Geo-Awareness warnt den Piloten nur vor dem Einflug, Geo-Caging blockiert das UAS physisch/elektronisch am Ein- oder Ausflug.</span></label><label class="option-label"><input type="radio" name="question-32" value="1"><span>Geo-Awareness ist für Multikopter, Geo-Caging für Starrflügler.</span></label><label class="option-label"><input type="radio" name="question-32" value="2"><span>Es ist exakt dasselbe.</span></label><label class="option-label"><input type="radio" name="question-32" value="3"><span>Geo-Caging ist eine Funktion, um Drohnen per Netz einzufangen.</span></label></div><div id="feedback-32" class="feedback"></div></div>
+        <div class="question-card" id="qcard-33"><div class="question-title">Frage 34: Wie hoch darf in der offenen Kategorie (A1-A3) standardmäßig maximal geflogen werden?</div><div class="options-group"><label class="option-label"><input type="radio" name="question-33" value="0"><span>50 Meter über Grund.</span></label><label class="option-label"><input type="radio" name="question-33" value="1"><span>120 Meter über Grund.</span></label><label class="option-label"><input type="radio" name="question-33" value="2"><span>300 Meter über Grund.</span></label><label class="option-label"><input type="radio" name="question-33" value="3"><span>So hoch wie Sichtkontakt besteht.</span></label></div><div id="feedback-33" class="feedback"></div></div>
+        <div class="question-card" id="qcard-34"><div class="question-title">Frage 35: Wofür steht das Akronym &#x27;MEUH&#x27; bei der Vorflugplanung?</div><div class="options-group"><label class="option-label"><input type="radio" name="question-34" value="0"><span>Motor, Energie, Untergrund, Höhe.</span></label><label class="option-label"><input type="radio" name="question-34" value="1"><span>Meteorology, Environment, UAS, Human limitations.</span></label><label class="option-label"><input type="radio" name="question-34" value="2"><span>Minimum Emergency UAS Hover.</span></label><label class="option-label"><input type="radio" name="question-34" value="3"><span>Manual Engagement Under Hover.</span></label></div><div id="feedback-34" class="feedback"></div></div>
+        <div class="question-card" id="qcard-35"><div class="question-title">Frage 36: Wofür nutzt der Pilot die &#x27;I’M SAFE&#x27; Checkliste?</div><div class="options-group"><label class="option-label"><input type="radio" name="question-35" value="0"><span>Um den technischen Zustand der Drohne zu prüfen.</span></label><label class="option-label"><input type="radio" name="question-35" value="1"><span>Um das Wetter (Wind/Regen) abzuschätzen.</span></label><label class="option-label"><input type="radio" name="question-35" value="2"><span>Um die eigene physische und mentale Flugtauglichkeit (Illness, Medication, Stress etc.) zu bewerten.</span></label><label class="option-label"><input type="radio" name="question-35" value="3"><span>Um Passanten vor dem Flug zu warnen.</span></label></div><div id="feedback-35" class="feedback"></div></div>
+        <div class="question-card" id="qcard-36"><div class="question-title">Frage 37: Warum ist die Nutzung einer physischen oder digitalen Checkliste (statt Auswendiglernen) vor dem Flug essenziell?</div><div class="options-group"><label class="option-label"><input type="radio" name="question-36" value="0"><span>Weil es gesetzlich vom BGB vorgeschrieben ist.</span></label><label class="option-label"><input type="radio" name="question-36" value="1"><span>Um zu verhindern, dass durch Routineblindheit oder Stress lebenswichtige Prüfschritte übersehen werden.</span></label><label class="option-label"><input type="radio" name="question-36" value="2"><span>Damit der Flugschreiber funktioniert.</span></label><label class="option-label"><input type="radio" name="question-36" value="3"><span>Um Zeit zu schinden, falls Passanten zuschauen.</span></label></div><div id="feedback-36" class="feedback"></div></div>
+        <div class="question-card" id="qcard-37"><div class="question-title">Frage 38: Was versteht man unter &#x27;Contingency Procedures&#x27; (Abweichungsverfahren)?</div><div class="options-group"><label class="option-label"><input type="radio" name="question-37" value="0"><span>Verfahren bei akuter Lebensgefahr (z.B. brennende Drohne).</span></label><label class="option-label"><input type="radio" name="question-37" value="1"><span>Maßnahmen, wenn das Fluggerät von der Normalität abweicht (z.B. GPS-Verlust), aber noch kontrollierbar ist, um wieder in den sicheren Zustand zu gelangen.</span></label><label class="option-label"><input type="radio" name="question-37" value="2"><span>Das reine Starten der Motoren.</span></label><label class="option-label"><input type="radio" name="question-37" value="3"><span>Das Herunterladen von Updates.</span></label></div><div id="feedback-37" class="feedback"></div></div>
+        <div class="question-card" id="qcard-38"><div class="question-title">Frage 39: Was versteht man unter &#x27;Emergency Procedures&#x27; (Notfallverfahren)?</div><div class="options-group"><label class="option-label"><input type="radio" name="question-38" value="0"><span>Routinechecks vor dem Flug.</span></label><label class="option-label"><input type="radio" name="question-38" value="1"><span>Maßnahmen bei völligem Kontrollverlust oder drohender Kollision (akute Gefahr).</span></label><label class="option-label"><input type="radio" name="question-38" value="2"><span>Das Laden des Akkus im Feld.</span></label><label class="option-label"><input type="radio" name="question-38" value="3"><span>Das Umschalten auf die zweite Kamera.</span></label></div><div id="feedback-38" class="feedback"></div></div>
+        <div class="question-card" id="qcard-39"><div class="question-title">Frage 40: Wie reagieren Sie als Pilot, wenn während des Fluges plötzlich das GPS-Signal massiv gestört ist (Contingency)?</div><div class="options-group"><label class="option-label"><input type="radio" name="question-39" value="0"><span>Ich drücke sofort den &#x27;Return-to-Home&#x27; Knopf und lasse die Fernsteuerung los.</span></label><label class="option-label"><input type="radio" name="question-39" value="1"><span>Ich schalte die Drohne in der Luft aus.</span></label><label class="option-label"><input type="radio" name="question-39" value="2"><span>Ich steuere das UAS manuell (im Atti-Mode) gegen den Wind abdriftend und lande schnellstmöglich sicher.</span></label><label class="option-label"><input type="radio" name="question-39" value="3"><span>Ich warte 10 Minuten in der Luft schwebend, bis das Signal wiederkommt.</span></label></div><div id="feedback-39" class="feedback"></div></div>
+        <div class="question-card" id="qcard-40"><div class="question-title">Frage 41: Was ist Ihre sofortige Pflicht (Emergency), wenn sich ein bemannter Rettungshubschrauber Ihrem Fluggebiet nähert?</div><div class="options-group"><label class="option-label"><input type="radio" name="question-40" value="0"><span>Ich habe Vorflugrecht, da mein Gerät kleiner ist.</span></label><label class="option-label"><input type="radio" name="question-40" value="1"><span>Ich wende das &#x27;See &amp; Avoid&#x27; Prinzip an, leite sofort einen Sinkflug ein und lande das UAS unverzüglich, um den Luftraum zu räumen.</span></label><label class="option-label"><input type="radio" name="question-40" value="2"><span>Ich steige auf 150m, um den Hubschrauber unter mir durchfliegen zu lassen.</span></label><label class="option-label"><input type="radio" name="question-40" value="3"><span>Ich blinke mit den Drohnenlichtern SOS.</span></label></div><div id="feedback-40" class="feedback"></div></div>
+        <div class="question-card" id="qcard-41"><div class="question-title">Frage 42: Welche zwei Bedingungen müssen erfüllt sein, damit eine Person rechtlich als &#x27;beteiligte Person&#x27; gilt?</div><div class="options-group"><label class="option-label"><input type="radio" name="question-41" value="0"><span>Sie muss volljährig sein und eine Warnweste tragen.</span></label><label class="option-label"><input type="radio" name="question-41" value="1"><span>Sie muss über die Risiken instruiert worden sein UND explizit der Teilnahme am Betrieb zugestimmt haben.</span></label><label class="option-label"><input type="radio" name="question-41" value="2"><span>Sie muss zufällig vorbeilaufen und kurz zuschauen.</span></label><label class="option-label"><input type="radio" name="question-41" value="3"><span>Sie muss verwandt mit dem Fernpiloten sein.</span></label></div><div id="feedback-41" class="feedback"></div></div>
+        <div class="question-card" id="qcard-42"><div class="question-title">Frage 43: Ist der Überflug von Menschenansammlungen in der Kategorie &#x27;Offen&#x27; zulässig?</div><div class="options-group"><label class="option-label"><input type="radio" name="question-42" value="0"><span>Ja, wenn die Drohne unter 250g wiegt.</span></label><label class="option-label"><input type="radio" name="question-42" value="1"><span>Ja, aber nur mit Erlaubnis der Polizei.</span></label><label class="option-label"><input type="radio" name="question-42" value="2"><span>Nein, unter keinen Umständen.</span></label><label class="option-label"><input type="radio" name="question-42" value="3"><span>Ja, wenn der Langsamflugmodus aktiviert ist.</span></label></div><div id="feedback-42" class="feedback"></div></div>
+        <div class="question-card" id="qcard-43"><div class="question-title">Frage 44: Warum ist ein Einsatzbriefing zwischen Fernpilot und Luftraumbeobachter vor dem Flug sicherheitskritisch?</div><div class="options-group"><label class="option-label"><input type="radio" name="question-43" value="0"><span>Damit der Beobachter weiß, welche Knöpfe er auf der Fernbedienung drücken muss.</span></label><label class="option-label"><input type="radio" name="question-43" value="1"><span>Um Aufgaben, Terminologie (z.B. Himmelsrichtungen) und Notfallverfahren abzustimmen, damit im Gefahrenfall ohne Missverständnisse sofort reagiert wird.</span></label><label class="option-label"><input type="radio" name="question-43" value="2"><span>Um den Stundenlohn auszuhandeln.</span></label><label class="option-label"><input type="radio" name="question-43" value="3"><span>Es ist nicht wichtig, Sichtkontakt zueinander reicht.</span></label></div><div id="feedback-43" class="feedback"></div></div>
+        <div class="question-card" id="qcard-44"><div class="question-title">Frage 45: Welche besonderen Risiken bestehen beim &#x27;Lone Working&#x27; (Fliegen ohne Beobachter/Crew)?</div><div class="options-group"><label class="option-label"><input type="radio" name="question-44" value="0"><span>Das WLAN bricht schneller ab.</span></label><label class="option-label"><input type="radio" name="question-44" value="1"><span>Arbeitsüberlastung durch gleichzeitiges Steuern und Luftraumüberwachen sowie fehlende Hilfe bei medizinischen Eigennotfällen.</span></label><label class="option-label"><input type="radio" name="question-44" value="2"><span>Der Akku entlädt sich durch fehlende Körperwärme im Team schneller.</span></label><label class="option-label"><input type="radio" name="question-44" value="3"><span>Keine Risiken, Alleinflug ist immer sicherer.</span></label></div><div id="feedback-44" class="feedback"></div></div>
+        <div class="question-card" id="qcard-45"><div class="question-title">Frage 46: Was ist das Flight Termination System (FTS)?</div><div class="options-group"><label class="option-label"><input type="radio" name="question-45" value="0"><span>Ein Fallschirm, der sanft öffnet.</span></label><label class="option-label"><input type="radio" name="question-45" value="1"><span>Ein System zum Flugabbruch, das die Antriebsenergie sofort kappt, um ein Wegfliegen (Fly-Away) zu verhindern.</span></label><label class="option-label"><input type="radio" name="question-45" value="2"><span>Das Ladekabel der Fernbedienung.</span></label><label class="option-label"><input type="radio" name="question-45" value="3"><span>Ein Programm zum Löschen von Fotos auf der SD-Karte.</span></label></div><div id="feedback-45" class="feedback"></div></div>
+        <div class="question-card" id="qcard-46"><div class="question-title">Frage 47: Warum muss der Pilot die technischen Parameter (Telemetrie wie Höhe, Distanz, Akkustand) im Flug permanent überwachen?</div><div class="options-group"><label class="option-label"><input type="radio" name="question-46" value="0"><span>Um die Vorgaben für &#x27;Normale Betriebsverfahren&#x27; (In-Flight Monitoring) einzuhalten und bei Abweichungen rechtzeitig reagieren zu können.</span></label><label class="option-label"><input type="radio" name="question-46" value="1"><span>Weil das Display sonst in den Standby geht.</span></label><label class="option-label"><input type="radio" name="question-46" value="2"><span>Nur um schöne Screenshots zu machen.</span></label><label class="option-label"><input type="radio" name="question-46" value="3"><span>Weil das Gesetz verlangt, dass die Daten laut vorgelesen werden.</span></label></div><div id="feedback-46" class="feedback"></div></div>
+        <div class="question-card" id="qcard-47"><div class="question-title">Frage 48: Was tun Sie, wenn plötzlich eine Gruppe unbeteiligter Personen in Ihr als sicher evaluiertes Einsatzgebiet läuft?</div><div class="options-group"><label class="option-label"><input type="radio" name="question-47" value="0"><span>Ich fliege tiefer, um sie zu warnen.</span></label><label class="option-label"><input type="radio" name="question-47" value="1"><span>Ich ignoriere sie, da ich zuerst da war.</span></label><label class="option-label"><input type="radio" name="question-47" value="2"><span>Ich passe den Flugweg sofort an, vergrößere den Abstand (ggf. 1:1 Regel) oder breche den Flug ab und lande.</span></label><label class="option-label"><input type="radio" name="question-47" value="3"><span>Ich schalte den Langsamflugmodus ein und fliege 1 Meter über ihren Köpfen.</span></label></div><div id="feedback-47" class="feedback"></div></div>
+        <div class="question-card" id="qcard-48"><div class="question-title">Frage 49: In welchem Luftraum (G oder C/D) bewegen sich UAS in der offenen Kategorie typischerweise und was bedeutet das?</div><div class="options-group"><label class="option-label"><input type="radio" name="question-48" value="0"><span>Im kontrollierten Luftraum (C), hier braucht man immer Kontakt zum Tower.</span></label><label class="option-label"><input type="radio" name="question-48" value="1"><span>Im unkontrollierten Luftraum (Klasse G, bodennah). Man muss selbstständig VFR-Verkehr (Hubschrauber) ausweichen.</span></label><label class="option-label"><input type="radio" name="question-48" value="2"><span>Im Weltraum, keine Regeln.</span></label><label class="option-label"><input type="radio" name="question-48" value="3"><span>Nur in geschlossenen Räumen.</span></label></div><div id="feedback-48" class="feedback"></div></div>
+        <div class="question-card" id="qcard-49"><div class="question-title">Frage 50: Was passiert mit UAS, die vor Inkrafttreten der neuen Klassen-Vorgaben gekauft wurden (Bestandsdrohnen ohne CE-Klassenmarkierung)?</div><div class="options-group"><label class="option-label"><input type="radio" name="question-49" value="0"><span>Sie müssen sofort verschrottet werden.</span></label><label class="option-label"><input type="radio" name="question-49" value="1"><span>Sie dürfen weiterhin genutzt werden, fallen aber bei einem Gewicht von über 250g in die strengere Unterkategorie A3 (weit weg von Menschen).</span></label><label class="option-label"><input type="radio" name="question-49" value="2"><span>Sie erhalten automatisch die Klasse C2.</span></label><label class="option-label"><input type="radio" name="question-49" value="3"><span>Sie dürfen nur noch drinnen geflogen werden.</span></label></div><div id="feedback-49" class="feedback"></div></div>
+    </div>
+    
+    <button id="submit-btn" type="button" onclick="evaluateExam()">Prüfung abgeben & Auswerten</button>
+    <div id="result-container"></div>
+    <button id="reload-btn" type="button" onclick="restartExam()" style="display:none;">Neue Prüfung starten (Neu mischen)</button>
+
+    <script>
+        // Sobald JavaScript läuft (Safari, Chrome, Android, PC), Vorschau-Hinweis sofort ausblenden
+        (function() {
+            var notice = document.getElementById('ios-preview-notice');
+            if (notice) {
+                notice.style.display = 'none';
+            }
+        })();
+
+        // Vollständiger Fragenpool (alle 52 Fragen unverändert erhalten)
+        const questionPool = [
+            {
+                        "q": "Wie wird die Windrichtung in Wetterberichten typischerweise angegeben?",
+                        "options": [
+                                    "Die Richtung, in die der Wind weht.",
+                                    "Die Himmelsrichtung, aus der der Wind kommt.",
+                                    "In Prozent der relativen Luftfeuchtigkeit.",
+                                    "Ausschließlich als Vektor in Millibar."
+                        ],
+                        "correct": 1
+            },
+            {
+                        "q": "Wie lautet die Faustregel zur Umrechnung von Windgeschwindigkeit in Knoten zu km/h?",
+                        "options": [
+                                    "Knoten geteilt durch 2",
+                                    "Knoten mal 3,6",
+                                    "Knoten plus 10",
+                                    "Knoten mal 2"
+                        ],
+                        "correct": 3
+            },
+            {
+                        "q": "Welchen Einfluss hat die Bodenreibung (Oberflächenreibung) auf den Wind?",
+                        "options": [
+                                    "Sie beschleunigt den Wind in Bodennähe.",
+                                    "Sie hat keinen Einfluss auf die Windgeschwindigkeit.",
+                                    "Sie bremst den Wind in Bodennähe ab.",
+                                    "Sie kühlt den Wind massiv herunter."
+                        ],
+                        "correct": 2
+            },
+            {
+                        "q": "Was passiert mit der Windgeschwindigkeit typischerweise, wenn ein UAS in größere Höhen (z.B. 100m) aufsteigt?",
+                        "options": [
+                                    "Sie nimmt ab, da die Luftdichte sinkt.",
+                                    "Sie nimmt zu, da die bremsende Bodenreibung entfällt.",
+                                    "Sie bleibt stets konstant zur Bodengeschwindigkeit.",
+                                    "Sie ändert zyklisch alle 10 Sekunden ihre Richtung."
+                        ],
+                        "correct": 1
+            },
+            {
+                        "q": "An welchen typischen Wetterphänomenen lassen sich extreme Turbulenzzonen erkennen?",
+                        "options": [
+                                    "An wolkenlosem Himmel (CAVOK).",
+                                    "Unter und in der Nähe von Cumulonimbuswolken (Gewitterwolken).",
+                                    "Bei leichtem Strahlungsnebel.",
+                                    "Ausschließlich bei Temperaturen unter 0°C."
+                        ],
+                        "correct": 1
+            },
+            {
+                        "q": "Wie verhält sich die Temperatur in der Troposphäre mit zunehmender Höhe?",
+                        "options": [
+                                    "Sie steigt um ca. 1°C pro 100m.",
+                                    "Sie bleibt konstant.",
+                                    "Sie sinkt durchschnittlich um ca. 0,6°C pro 100m.",
+                                    "Sie sinkt schlagartig auf -50°C ab 50m Höhe."
+                        ],
+                        "correct": 2
+            },
+            {
+                        "q": "Welche direkte Gefahr droht dem UAS bei Flügen mit Temperaturen um den Gefrierpunkt und hoher Luftfeuchtigkeit?",
+                        "options": [
+                                    "Die Propeller drehen zu schnell durch, da die Luft zu dicht ist.",
+                                    "Vereisung (Eisansatz) an den Propellern, was zu drastischem Leistungsverlust führt.",
+                                    "Der Kunststoff des Gehäuses schmilzt durch Reibung.",
+                                    "Die Kameraobjektive zerspringen."
+                        ],
+                        "correct": 1
+            },
+            {
+                        "q": "Welche Voraussetzung muss für die Entstehung von Nebel gegeben sein?",
+                        "options": [
+                                    "Die Windgeschwindigkeit muss über 30 Knoten liegen.",
+                                    "Die Lufttemperatur muss exakt auf den Taupunkt absinken (Spread nahe 0).",
+                                    "Der Luftdruck muss über 1050 hPa steigen.",
+                                    "Es muss zwingend zuvor geregnet haben."
+                        ],
+                        "correct": 1
+            },
+            {
+                        "q": "Wie unterscheidet sich Nebel von Dunst in der Luftfahrtdefinition?",
+                        "options": [
+                                    "Bei Nebel liegt die Sichtweite unter 1 km, bei Dunst zwischen 1 km und 8 km.",
+                                    "Nebel ist warm, Dunst ist kalt.",
+                                    "Nebel entsteht nur über Wasser, Dunst nur über Land.",
+                                    "Bei Dunst liegt die Sichtweite unter 1 km, bei Nebel darüber."
+                        ],
+                        "correct": 0
+            },
+            {
+                        "q": "Was passiert mit der Luftdichte, wenn die Lufttemperatur stark ansteigt?",
+                        "options": [
+                                    "Die Luftdichte nimmt zu.",
+                                    "Die Luftdichte nimmt ab, was den Auftrieb der Propeller verringert.",
+                                    "Die Luftdichte bleibt unverändert, nur der Druck steigt.",
+                                    "Die Luftdichte schwankt im Sekundentakt."
+                        ],
+                        "correct": 1
+            },
+            {
+                        "q": "Wofür steht die Abkürzung UTC in Wetter- und Luftfahrtberichten?",
+                        "options": [
+                                    "Universal Time Coordinated (Koordinierte Weltzeit).",
+                                    "United Time Clock.",
+                                    "Universal Temperature Control.",
+                                    "Unmanned Traffic Control."
+                        ],
+                        "correct": 0
+            },
+            {
+                        "q": "Was versteht man unter dem 'sicheren Betriebsbereich' (Operating Envelope) eines UAS?",
+                        "options": [
+                                    "Der Bereich bis exakt 120m Höhe.",
+                                    "Die vom Hersteller festgelegten physischen und umweltbedingten Limits (Wind, Temp., Gewicht).",
+                                    "Die maximale Reichweite der Fernsteuerung.",
+                                    "Das von der Behörde ausgewiesene Fluggebiet."
+                        ],
+                        "correct": 1
+            },
+            {
+                        "q": "Was bedeutet die Abkürzung MTOM?",
+                        "options": [
+                                    "Maximum Time of Maintenance.",
+                                    "Minimum Take-Off Mass.",
+                                    "Maximum Take-Off Mass (Maximal zulässige Abflugmasse).",
+                                    "Manual Thrust Override Mode."
+                        ],
+                        "correct": 2
+            },
+            {
+                        "q": "Wofür steht die Abkürzung CG in der Flugmechanik?",
+                        "options": [
+                                    "Control Gain (Steuerungsverstärkung).",
+                                    "Center of Gravity (Schwerpunkt).",
+                                    "Current Generation.",
+                                    "Collision Guard."
+                        ],
+                        "correct": 1
+            },
+            {
+                        "q": "Welche Auswirkungen hat ein falsch liegender Schwerpunkt (z.B. durch schlecht montierte Nutzlast) bei einem Multikopter?",
+                        "options": [
+                                    "Er fliegt schneller, da er aerodynamischer ist.",
+                                    "Die Flugzeit verdoppelt sich.",
+                                    "Asymmetrische Motorbelastung, schlechte Steuerbarkeit und erhöhter Stromverbrauch.",
+                                    "Die Funkverbindung bricht sofort ab."
+                        ],
+                        "correct": 2
+            },
+            {
+                        "q": "Welche Konsequenz droht bei einem hecklastigen Starrflügler (CG hinter dem hinteren Limit)?",
+                        "options": [
+                                    "Das Flugzeug wird extrem stabil und lässt sich kaum lenken.",
+                                    "Das Flugzeug wird aerodynamisch hochgradig instabil (Stall-Gefahr) und ist unkontrollierbar.",
+                                    "Das Flugzeug fliegt automatisch Loopings.",
+                                    "Es gibt keine spürbaren Konsequenzen."
+                        ],
+                        "correct": 1
+            },
+            {
+                        "q": "Warum muss eine Nutzlast (z.B. Kamera) vor dem Start absolut sicher arretiert werden?",
+                        "options": [
+                                    "Damit sie nicht gestohlen wird.",
+                                    "Weil ein Verrutschen während des Fluges den Schwerpunkt abrupt verschiebt und zum Absturz führen kann.",
+                                    "Weil ansonsten die CE-Markierung ungültig wird.",
+                                    "Damit das Video nicht verwackelt (rein optischer Grund)."
+                        ],
+                        "correct": 1
+            },
+            {
+                        "q": "Was gibt die C-Rate eines Li-Po Akkus an?",
+                        "options": [
+                                    "Die Ladezyklen, bis der Akku defekt ist.",
+                                    "Die maximale Kapazität in Milliamperestunden.",
+                                    "Die zulässige Betriebstemperatur in Celsius.",
+                                    "Den maximal zulässigen Entladestrom im Verhältnis zur Kapazität."
+                        ],
+                        "correct": 3
+            },
+            {
+                        "q": "Was versteht man unter 'Thermal Runaway' bei Lithium-Akkus?",
+                        "options": [
+                                    "Das Erwärmen des Akkus im Winter, um die Leistung zu steigern.",
+                                    "Eine unkontrollierbare, sich selbst verstärkende Überhitzung, die zum Brand/Explosion führt.",
+                                    "Die automatische Abschaltung des Akkus bei 0% Ladung.",
+                                    "Das Fliehen vor Hitzequellen durch Sensorik."
+                        ],
+                        "correct": 1
+            },
+            {
+                        "q": "Wie sollten Li-Po Akkus optimal gelagert werden?",
+                        "options": [
+                                    "Komplett entladen (0%) im Kühlschrank.",
+                                    "Immer auf 100% vollgeladen auf der Heizung.",
+                                    "Auf Lagerspannung (ca. 3.8-3.9V pro Zelle) in einer feuerfesten Umgebung.",
+                                    "Im direkten Sonnenlicht, um den Innenwiderstand zu senken."
+                        ],
+                        "correct": 2
+            },
+            {
+                        "q": "Welcher horizontale Mindestabstand gilt beim Betrieb eines C2-UAS im Normalmodus in der Kategorie A2 zu unbeteiligten Personen?",
+                        "options": [
+                                    "10 Meter.",
+                                    "30 Meter.",
+                                    "5 Meter.",
+                                    "50 Meter."
+                        ],
+                        "correct": 1
+            },
+            {
+                        "q": "Auf welchen Wert wird die Geschwindigkeit im 'Low-Speed-Mode' (Langsamflugmodus) bei C2-Drohnen typischerweise begrenzt?",
+                        "options": [
+                                    "Maximal 10 m/s.",
+                                    "Maximal 1 m/s.",
+                                    "Maximal 5 m/s.",
+                                    "Maximal 3 m/s."
+                        ],
+                        "correct": 3
+            },
+            {
+                        "q": "Auf welche Distanz darf der horizontale Abstand zu Unbeteiligten reduziert werden, wenn der Langsamflugmodus (Low-Speed-Mode) bei einem C2-UAS aktiviert ist?",
+                        "options": [
+                                    "Auf bis zu 1 Meter.",
+                                    "Auf bis zu 15 Meter.",
+                                    "Auf bis zu 5 Meter.",
+                                    "Auf 0 Meter (Überflug erlaubt)."
+                        ],
+                        "correct": 2
+            },
+            {
+                        "q": "Wie funktioniert die '1:1 Regel' zur Minderung des Bodenrisikos mathematisch?",
+                        "options": [
+                                    "Die horizontale Distanz zu Personen muss stets das Doppelte der Flughöhe betragen.",
+                                    "Die horizontale Distanz zu Personen muss mindestens der aktuellen Flughöhe entsprechen (z.B. 40m Höhe = 40m Abstand).",
+                                    "Für jeden geflogenen Kilometer muss 1 Minute Pause eingelegt werden.",
+                                    "Pro Kilo Gewicht muss 1 Meter Abstand gehalten werden."
+                        ],
+                        "correct": 1
+            },
+            {
+                        "q": "Wer trägt letztlich die rechtliche Verantwortung für die Bestimmung und Aufrechterhaltung des sicheren Abstands zu Menschen?",
+                        "options": [
+                                    "Der Hersteller des UAS.",
+                                    "Die Luftfahrtbehörde.",
+                                    "Ausschließlich der Fernpilot vor Ort.",
+                                    "Die automatische Hinderniserkennung der Drohne."
+                        ],
+                        "correct": 2
+            },
+            {
+                        "q": "Welche beiden EU-Verordnungen bilden die rechtliche Grundlage für den UAS-Betrieb in Europa?",
+                        "options": [
+                                    "(EU) 2015/100 und (EU) 2016/200.",
+                                    "(EU) 2019/947 und (EU) 2019/945.",
+                                    "(EU) 2021/111 und (EU) 2021/222.",
+                                    "LuftVG und LuftVO."
+                        ],
+                        "correct": 1
+            },
+            {
+                        "q": "Welche sind die drei Unterkategorien der Betriebskategorie 'Offen' (Open)?",
+                        "options": [
+                                    "A1, A2, A3.",
+                                    "Open, Specific, Certified.",
+                                    "C0, C1, C2.",
+                                    "VFR, IFR, SVFR."
+                        ],
+                        "correct": 0
+            },
+            {
+                        "q": "Welche UAS-Klassenmarkierung ist standardmäßig für den Betrieb in der Unterkategorie A2 vorgesehen?",
+                        "options": [
+                                    "C0",
+                                    "C1",
+                                    "C3",
+                                    "C2"
+                        ],
+                        "correct": 3
+            },
+            {
+                        "q": "Wie unterscheidet sich ein Unfall (Accident) von einem Vorfall (Incident)?",
+                        "options": [
+                                    "Es gibt keinen Unterschied, die Begriffe sind synonym.",
+                                    "Ein Vorfall hat fatale Folgen, ein Unfall nicht.",
+                                    "Ein Unfall beinhaltet schwere Personen- oder Sachschäden; ein Vorfall beschreibt Störungen ohne katastrophale Folgen.",
+                                    "Ein Unfall passiert nur bemannten Flugzeugen."
+                        ],
+                        "correct": 2
+            },
+            {
+                        "q": "Was bedeutet der Begriff 'Just Culture' im Rahmen von Vorfallsmeldungen (Occurrence Reporting)?",
+                        "options": [
+                                    "Es wird nur gemeldet, wenn es absolut gerechtfertigt ist.",
+                                    "Eine Fehlerkultur, bei der unabsichtliche Fehler nicht bestraft werden, um das offene Melden von Sicherheitsproblemen zu fördern.",
+                                    "Wer einen Fehler macht, wird sofort und maximal juristisch bestraft.",
+                                    "Es werden nur Fehler der Hersteller gemeldet."
+                        ],
+                        "correct": 1
+            },
+            {
+                        "q": "Was ist eine geografische UAS-Zone (Geozone)?",
+                        "options": [
+                                    "Eine Zone ohne Schwerkraft.",
+                                    "Ein vom jeweiligen Staat festgelegtes Gebiet, in dem UAS-Betrieb verboten oder an bestimmte Auflagen geknüpft ist.",
+                                    "Ein Gebiet, in dem nur mit Kameras geflogen werden darf.",
+                                    "Der Bereich direkt über dem Wohnort des Fernpiloten."
+                        ],
+                        "correct": 1
+            },
+            {
+                        "q": "Über welches offizielle digitale Portal können Fernpiloten in Deutschland aktuelle Geozonen und Luftraumbeschränkungen einsehen?",
+                        "options": [
+                                    "Google Maps.",
+                                    "dipul.de (Digitales Portal rund um Drohnen).",
+                                    "drohnen-radar.com.",
+                                    "Wetter.com."
+                        ],
+                        "correct": 1
+            },
+            {
+                        "q": "Wodurch unterscheidet sich 'Geo-Awareness' von 'Geo-Caging'?",
+                        "options": [
+                                    "Geo-Awareness warnt den Piloten nur vor dem Einflug, Geo-Caging blockiert das UAS physisch/elektronisch am Ein- oder Ausflug.",
+                                    "Geo-Awareness ist für Multikopter, Geo-Caging für Starrflügler.",
+                                    "Es ist exakt dasselbe.",
+                                    "Geo-Caging ist eine Funktion, um Drohnen per Netz einzufangen."
+                        ],
+                        "correct": 0
+            },
+            {
+                        "q": "Wie hoch darf in der offenen Kategorie (A1-A3) standardmäßig maximal geflogen werden?",
+                        "options": [
+                                    "50 Meter über Grund.",
+                                    "120 Meter über Grund.",
+                                    "300 Meter über Grund.",
+                                    "So hoch wie Sichtkontakt besteht."
+                        ],
+                        "correct": 1
+            },
+            {
+                        "q": "Wofür steht das Akronym 'MEUH' bei der Vorflugplanung?",
+                        "options": [
+                                    "Motor, Energie, Untergrund, Höhe.",
+                                    "Meteorology, Environment, UAS, Human limitations.",
+                                    "Minimum Emergency UAS Hover.",
+                                    "Manual Engagement Under Hover."
+                        ],
+                        "correct": 1
+            },
+            {
+                        "q": "Wofür nutzt der Pilot die 'I’M SAFE' Checkliste?",
+                        "options": [
+                                    "Um den technischen Zustand der Drohne zu prüfen.",
+                                    "Um das Wetter (Wind/Regen) abzuschätzen.",
+                                    "Um die eigene physische und mentale Flugtauglichkeit (Illness, Medication, Stress etc.) zu bewerten.",
+                                    "Um Passanten vor dem Flug zu warnen."
+                        ],
+                        "correct": 2
+            },
+            {
+                        "q": "Warum ist die Nutzung einer physischen oder digitalen Checkliste (statt Auswendiglernen) vor dem Flug essenziell?",
+                        "options": [
+                                    "Weil es gesetzlich vom BGB vorgeschrieben ist.",
+                                    "Um zu verhindern, dass durch Routineblindheit oder Stress lebenswichtige Prüfschritte übersehen werden.",
+                                    "Damit der Flugschreiber funktioniert.",
+                                    "Um Zeit zu schinden, falls Passanten zuschauen."
+                        ],
+                        "correct": 1
+            },
+            {
+                        "q": "Was versteht man unter 'Contingency Procedures' (Abweichungsverfahren)?",
+                        "options": [
+                                    "Verfahren bei akuter Lebensgefahr (z.B. brennende Drohne).",
+                                    "Maßnahmen, wenn das Fluggerät von der Normalität abweicht (z.B. GPS-Verlust), aber noch kontrollierbar ist, um wieder in den sicheren Zustand zu gelangen.",
+                                    "Das reine Starten der Motoren.",
+                                    "Das Herunterladen von Updates."
+                        ],
+                        "correct": 1
+            },
+            {
+                        "q": "Was versteht man unter 'Emergency Procedures' (Notfallverfahren)?",
+                        "options": [
+                                    "Routinechecks vor dem Flug.",
+                                    "Maßnahmen bei völligem Kontrollverlust oder drohender Kollision (akute Gefahr).",
+                                    "Das Laden des Akkus im Feld.",
+                                    "Das Umschalten auf die zweite Kamera."
+                        ],
+                        "correct": 1
+            },
+            {
+                        "q": "Wie reagieren Sie als Pilot, wenn während des Fluges plötzlich das GPS-Signal massiv gestört ist (Contingency)?",
+                        "options": [
+                                    "Ich drücke sofort den 'Return-to-Home' Knopf und lasse die Fernsteuerung los.",
+                                    "Ich schalte die Drohne in der Luft aus.",
+                                    "Ich steuere das UAS manuell (im Atti-Mode) gegen den Wind abdriftend und lande schnellstmöglich sicher.",
+                                    "Ich warte 10 Minuten in der Luft schwebend, bis das Signal wiederkommt."
+                        ],
+                        "correct": 2
+            },
+            {
+                        "q": "Was ist Ihre sofortige Pflicht (Emergency), wenn sich ein bemannter Rettungshubschrauber Ihrem Fluggebiet nähert?",
+                        "options": [
+                                    "Ich habe Vorflugrecht, da mein Gerät kleiner ist.",
+                                    "Ich wende das 'See & Avoid' Prinzip an, leite sofort einen Sinkflug ein und lande das UAS unverzüglich, um den Luftraum zu räumen.",
+                                    "Ich steige auf 150m, um den Hubschrauber unter mir durchfliegen zu lassen.",
+                                    "Ich blinke mit den Drohnenlichtern SOS."
+                        ],
+                        "correct": 1
+            },
+            {
+                        "q": "Welche zwei Bedingungen müssen erfüllt sein, damit eine Person rechtlich als 'beteiligte Person' gilt?",
+                        "options": [
+                                    "Sie muss volljährig sein und eine Warnweste tragen.",
+                                    "Sie muss über die Risiken instruiert worden sein UND explizit der Teilnahme am Betrieb zugestimmt haben.",
+                                    "Sie muss zufällig vorbeilaufen und kurz zuschauen.",
+                                    "Sie muss verwandt mit dem Fernpiloten sein."
+                        ],
+                        "correct": 1
+            },
+            {
+                        "q": "Ist der Überflug von Menschenansammlungen in der Kategorie 'Offen' zulässig?",
+                        "options": [
+                                    "Ja, wenn die Drohne unter 250g wiegt.",
+                                    "Ja, aber nur mit Erlaubnis der Polizei.",
+                                    "Nein, unter keinen Umständen.",
+                                    "Ja, wenn der Langsamflugmodus aktiviert ist."
+                        ],
+                        "correct": 2
+            },
+            {
+                        "q": "Warum ist ein Einsatzbriefing zwischen Fernpilot und Luftraumbeobachter vor dem Flug sicherheitskritisch?",
+                        "options": [
+                                    "Damit der Beobachter weiß, welche Knöpfe er auf der Fernbedienung drücken muss.",
+                                    "Um Aufgaben, Terminologie (z.B. Himmelsrichtungen) und Notfallverfahren abzustimmen, damit im Gefahrenfall ohne Missverständnisse sofort reagiert wird.",
+                                    "Um den Stundenlohn auszuhandeln.",
+                                    "Es ist nicht wichtig, Sichtkontakt zueinander reicht."
+                        ],
+                        "correct": 1
+            },
+            {
+                        "q": "Welche besonderen Risiken bestehen beim 'Lone Working' (Fliegen ohne Beobachter/Crew)?",
+                        "options": [
+                                    "Das WLAN bricht schneller ab.",
+                                    "Arbeitsüberlastung durch gleichzeitiges Steuern und Luftraumüberwachen sowie fehlende Hilfe bei medizinischen Eigennotfällen.",
+                                    "Der Akku entlädt sich durch fehlende Körperwärme im Team schneller.",
+                                    "Keine Risiken, Alleinflug ist immer sicherer."
+                        ],
+                        "correct": 1
+            },
+            {
+                        "q": "Was ist das Flight Termination System (FTS)?",
+                        "options": [
+                                    "Ein Fallschirm, der sanft öffnet.",
+                                    "Ein System zum Flugabbruch, das die Antriebsenergie sofort kappt, um ein Wegfliegen (Fly-Away) zu verhindern.",
+                                    "Das Ladekabel der Fernbedienung.",
+                                    "Ein Programm zum Löschen von Fotos auf der SD-Karte."
+                        ],
+                        "correct": 1
+            },
+            {
+                        "q": "Warum muss der Pilot die technischen Parameter (Telemetrie wie Höhe, Distanz, Akkustand) im Flug permanent überwachen?",
+                        "options": [
+                                    "Um die Vorgaben für 'Normale Betriebsverfahren' (In-Flight Monitoring) einzuhalten und bei Abweichungen rechtzeitig reagieren zu können.",
+                                    "Weil das Display sonst in den Standby geht.",
+                                    "Nur um schöne Screenshots zu machen.",
+                                    "Weil das Gesetz verlangt, dass die Daten laut vorgelesen werden."
+                        ],
+                        "correct": 0
+            },
+            {
+                        "q": "Was tun Sie, wenn plötzlich eine Gruppe unbeteiligter Personen in Ihr als sicher evaluiertes Einsatzgebiet läuft?",
+                        "options": [
+                                    "Ich fliege tiefer, um sie zu warnen.",
+                                    "Ich ignoriere sie, da ich zuerst da war.",
+                                    "Ich passe den Flugweg sofort an, vergrößere den Abstand (ggf. 1:1 Regel) oder breche den Flug ab und lande.",
+                                    "Ich schalte den Langsamflugmodus ein und fliege 1 Meter über ihren Köpfen."
+                        ],
+                        "correct": 2
+            },
+            {
+                        "q": "In welchem Luftraum (G oder C/D) bewegen sich UAS in der offenen Kategorie typischerweise und was bedeutet das?",
+                        "options": [
+                                    "Im kontrollierten Luftraum (C), hier braucht man immer Kontakt zum Tower.",
+                                    "Im unkontrollierten Luftraum (Klasse G, bodennah). Man muss selbstständig VFR-Verkehr (Hubschrauber) ausweichen.",
+                                    "Im Weltraum, keine Regeln.",
+                                    "Nur in geschlossenen Räumen."
+                        ],
+                        "correct": 1
+            },
+            {
+                        "q": "Was passiert mit UAS, die vor Inkrafttreten der neuen Klassen-Vorgaben gekauft wurden (Bestandsdrohnen ohne CE-Klassenmarkierung)?",
+                        "options": [
+                                    "Sie müssen sofort verschrottet werden.",
+                                    "Sie dürfen weiterhin genutzt werden, fallen aber bei einem Gewicht von über 250g in die strengere Unterkategorie A3 (weit weg von Menschen).",
+                                    "Sie erhalten automatisch die Klasse C2.",
+                                    "Sie dürfen nur noch drinnen geflogen werden."
+                        ],
+                        "correct": 1
+            },
+            {
+                        "q": "Was ist der Hauptgrund für die Vorflugkontrolle (Pre-Flight Inspection) des physischen UAS-Zustands?",
+                        "options": [
+                                    "Die Identifikation von Rissen im Rahmen, Blähungen am Akku oder Defekten an Propellern, die im Flug zu Strukturversagen führen könnten.",
+                                    "Sicherzustellen, dass das Hersteller-Logo sauber ist.",
+                                    "Um den Kompass zu entmagnetisieren.",
+                                    "Um den Speicherplatz der SD-Karte zu löschen."
+                        ],
+                        "correct": 0
+            },
+            {
+                        "q": "Dürfen Sie nationale Geozonen (z.B. Naturschutzgebiete oder Bundesstraßen) einfach umfliegen, wenn die Drohnen-App Sie nicht warnt?",
+                        "options": [
+                                    "Ja, die App hat immer recht.",
+                                    "Nein. Der Fernpilot ist gesetzlich verpflichtet, sich vor jedem Flug in offiziellen Quellen (z.B. dipul.de) über die geltenden Luftraumbeschränkungen zu informieren.",
+                                    "Ja, solange ich nicht filme.",
+                                    "Nein, aber ich darf drüber fliegen, wenn ich schnell bin."
+                        ],
+                        "correct": 1
+            }
+];
+
+        let currentExam = [];
+
+        // Fisher-Yates Shuffle Funktion
+        function shuffleArray(array) {
+            let curId = array.length;
+            while (0 !== curId) {
+                let randId = Math.floor(Math.random() * curId);
+                curId -= 1;
+                let tmp = array[curId];
+                array[curId] = array[randId];
+                array[randId] = tmp;
+            }
+            return array;
+        }
+
+        // Initialisiert die Prüfung
+        function initExam() {
+            const shuffledPool = shuffleArray([...questionPool]);
+            currentExam = shuffledPool.slice(0, 50);
+
+            const container = document.getElementById('quiz-container');
+            if (!container) return;
+            container.innerHTML = '';
+
+            currentExam.forEach((qObj, index) => {
+                let card = document.createElement('div');
+                card.className = 'question-card';
+                card.id = 'qcard-' + index;
+
+                let title = document.createElement('div');
+                title.className = 'question-title';
+                title.innerText = `Frage ${index + 1}: ${qObj.q}`;
+                card.appendChild(title);
+
+                let optionsGroup = document.createElement('div');
+                optionsGroup.className = 'options-group';
+
+                // Antwortmöglichkeiten pro Frage individuell mischen
+                let optionsWithIndex = qObj.options.map((opt, i) => ({ text: opt, originalIndex: i }));
+                optionsWithIndex = shuffleArray(optionsWithIndex);
+
+                optionsWithIndex.forEach((optObj) => {
+                    let label = document.createElement('label');
+                    label.className = 'option-label';
+                    
+                    let radio = document.createElement('input');
+                    radio.type = 'radio';
+                    radio.name = 'question-' + index;
+                    radio.value = optObj.originalIndex;
+                    
+                    let span = document.createElement('span');
+                    span.textContent = optObj.text;
+
+                    label.appendChild(radio);
+                    label.appendChild(span);
+                    optionsGroup.appendChild(label);
+                });
+
+                card.appendChild(optionsGroup);
+
+                let feedback = document.createElement('div');
+                feedback.id = 'feedback-' + index;
+                feedback.className = 'feedback';
+                card.appendChild(feedback);
+
+                container.appendChild(card);
+            });
+            
+            document.getElementById('result-container').style.display = 'none';
+            document.getElementById('submit-btn').style.display = 'block';
+            document.getElementById('reload-btn').style.display = 'none';
+        }
+
+        // Neustart ohne location.reload() (verhindert iOS Safari Fehler bei lokalen/Mail-Dateien)
+        function restartExam() {
+            initExam();
+            try {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } catch (e) {
+                window.scrollTo(0, 0);
+            }
+        }
+
+        // Auswertung der Prüfung
+        function evaluateExam() {
+            let score = 0;
+            currentExam.forEach((qObj, index) => {
+                const selected = document.querySelector(`input[name="question-${index}"]:checked`);
+                const feedbackDiv = document.getElementById(`feedback-${index}`);
+                const card = document.getElementById(`qcard-${index}`);
+                
+                feedbackDiv.style.display = 'block';
+
+                if (selected) {
+                    if (parseInt(selected.value, 10) === qObj.correct) {
+                        score++;
+                        feedbackDiv.innerHTML = "✅ <b>Richtig!</b>";
+                        feedbackDiv.className = "feedback feedback-correct";
+                        card.style.borderLeftColor = "#10b981";
+                    } else {
+                        feedbackDiv.innerHTML = `❌ <b>Falsch.</b> Die richtige Antwort lautet: <br><i>${qObj.options[qObj.correct]}</i>`;
+                        feedbackDiv.className = "feedback feedback-incorrect";
+                        card.style.borderLeftColor = "#ef4444";
+                    }
+                } else {
+                    feedbackDiv.innerHTML = `⚠️ <b>Keine Antwort gewählt.</b> Die richtige Antwort lautet: <br><i>${qObj.options[qObj.correct]}</i>`;
+                    feedbackDiv.className = "feedback feedback-incorrect";
+                    card.style.borderLeftColor = "#f59e0b";
+                }
+                
+                let radios = document.querySelectorAll(`input[name="question-${index}"]`);
+                radios.forEach(r => r.disabled = true);
+            });
+
+            const resultContainer = document.getElementById('result-container');
+            const prozent = Math.round((score / currentExam.length) * 100);
+            
+            let passed = prozent >= 75;
+            let circleColor = passed ? "#10b981" : "#ef4444";
+            
+            let resultText = `
+                <div class="score-circle" style="background-color: ${circleColor};">${prozent}%</div>
+                <h2>Ergebnis: ${score} von ${currentExam.length} Punkten</h2>
+            `;
+            
+            if (passed) {
+                resultText += `<p style="color:#166534; font-weight:bold;">Herzlichen Glückwunsch! Du hättest die Prüfung bestanden.</p>`;
+            } else {
+                resultText += `<p style="color:#991b1b; font-weight:bold;">Leider nicht bestanden. Es werden mindestens 75% gefordert.</p>`;
+            }
+
+            resultContainer.innerHTML = resultText;
+            resultContainer.style.display = 'block';
+            
+            document.getElementById('submit-btn').style.display = 'none';
+            document.getElementById('reload-btn').style.display = 'block';
+            
+            try {
+                resultContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            } catch (e) {
+                resultContainer.scrollIntoView(true);
+            }
+        }
+
+        // Sofortige Initialisierung (funktioniert unter iOS Safari, Chrome, Android und Desktop)
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initExam);
+        } else {
+            initExam();
+        }
+    </script>
+</body>
+</html>
